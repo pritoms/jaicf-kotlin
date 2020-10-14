@@ -32,7 +32,7 @@ class ScenarioModelBuilder {
     }
 
     fun build(): ScenarioModel {
-        val model =  ScenarioModel().also {
+        val model = ScenarioModel().also {
             it.states += states
             it.transitions += transitions
             it.hooks += handlers
