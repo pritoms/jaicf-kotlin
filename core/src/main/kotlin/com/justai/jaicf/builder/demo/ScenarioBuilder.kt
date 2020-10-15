@@ -19,11 +19,15 @@ annotation class ScenarioMarker
 @ScenarioMarker
 fun Scenario(body: ScenarioBuilder.() -> Unit) = ScenarioBuilder().apply(body).build()
 
+open class Scenario : ScenarioBuilder() {
+    val model by lazy { build() }
+}
+
 /**
  * Builds a [ScenarioModel] that represents a dialog scenario.
  */
 @ScenarioMarker
-class ScenarioBuilder {
+open class ScenarioBuilder {
     private val scenario = ScenarioModelBuilder()
     private val root = StateBuilder(StatePath.root(), scenario = scenario)
 
@@ -104,7 +108,7 @@ class StateBuilder(
      */
     fun transition(toState: String, body: RuleBuilder.() -> Unit) {
         val rules = RuleBuilder().apply(body).build()
-        rules.forEach { scenario.registerTransition(path.toString(), toState, it) }
+        rules.forEach { scenario.registerTransition(path.toString(), path.resolve(toState).toString(), it) }
     }
 
     /**
@@ -123,7 +127,7 @@ class StateBuilder(
      */
     fun activators(fromState: String = parent.path.toString(), body: RuleBuilder.() -> Unit) {
         val rules = RuleBuilder().apply(body).build()
-        rules.forEach { scenario.registerTransition(fromState, path.toString(), it) }
+        rules.forEach { scenario.registerTransition(path.resolve(fromState).toString(), path.toString(), it) }
     }
 
     /**
