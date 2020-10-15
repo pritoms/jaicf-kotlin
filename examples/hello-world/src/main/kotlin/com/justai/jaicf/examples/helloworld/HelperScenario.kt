@@ -2,14 +2,15 @@ package com.justai.jaicf.examples.helloworld
 
 import com.justai.jaicf.activator.catchall.catchAll
 import com.justai.jaicf.activator.dialogflow.dialogflow
+import com.justai.jaicf.builder.demo.Scenario
+import com.justai.jaicf.builder.demo.catchAll
+import com.justai.jaicf.builder.demo.intent
 import com.justai.jaicf.channel.alexa.activator.alexaIntent
 import com.justai.jaicf.hook.BotRequestHook
-import com.justai.jaicf.model.scenario.Scenario
 import com.justai.jaicf.reactions.Reactions
 
-object HelperScenario : Scenario() {
-
-    init {
+val HelperScenario = Scenario {
+    root {
         state("helper") {
             state("ask4name") {
                 activators {
@@ -41,7 +42,6 @@ object HelperScenario : Scenario() {
             }
         }
     }
-
 }
 
 fun Reactions.askForName(

@@ -1,5 +1,6 @@
 package com.justai.jaicf.examples.helloworld
 
+import com.justai.jaicf.builder.demo.*
 import com.justai.jaicf.channel.aimybox.AimyboxEvent
 import com.justai.jaicf.channel.aimybox.aimybox
 import com.justai.jaicf.channel.alexa.*
@@ -11,11 +12,10 @@ import com.justai.jaicf.channel.slack.slack
 import com.justai.jaicf.channel.telegram.telegram
 import com.justai.jaicf.model.scenario.Scenario
 
-object HelloWorldScenario: Scenario(
-    dependencies = listOf(HelperScenario)
-) {
+val HelloWorldScenario = Scenario {
+    dependsOn(HelperScenario)
 
-    init {
+    root {
         state("main") {
 
             activators {

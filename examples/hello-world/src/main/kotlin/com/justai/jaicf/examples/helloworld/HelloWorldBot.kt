@@ -17,7 +17,7 @@ val dialogflowActivator = DialogflowIntentActivator.Factory(
 )
 
 val helloWorldBot = BotEngine(
-    model = HelloWorldScenario.model,
+    model = HelloWorldScenario,
     activators = arrayOf(
         AlexaActivator,
         dialogflowActivator,
