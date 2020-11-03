@@ -1,6 +1,9 @@
 package com.justai.jaicf.examples.helloworld
 
+import com.justai.jaicf.activator.caila.caila
 import com.justai.jaicf.activator.dialogflow.dialogflow
+import com.justai.jaicf.activator.event.event
+import com.justai.jaicf.channel.GenericActionContext
 import com.justai.jaicf.channel.aimybox.AimyboxEvent
 import com.justai.jaicf.channel.aimybox.aimybox
 import com.justai.jaicf.channel.alexa.*
@@ -8,11 +11,14 @@ import com.justai.jaicf.channel.alexa.model.AlexaEvent
 import com.justai.jaicf.channel.alexa.model.AlexaIntent
 import com.justai.jaicf.channel.facebook.api.facebook
 import com.justai.jaicf.channel.facebook.facebook
+import com.justai.jaicf.channel.genericAction
 import com.justai.jaicf.channel.googleactions.dialogflow.DialogflowIntent
+import com.justai.jaicf.channel.telegram.event
+import com.justai.jaicf.channel.telegram.intent
 import com.justai.jaicf.channel.telegram.telegram
 import com.justai.jaicf.model.scenario.Scenario
 
-object HelloWorldScenario: Scenario(
+object HelloWorldScenario : Scenario(
     dependencies = listOf(HelperScenario)
 ) {
 
@@ -67,6 +73,82 @@ object HelloWorldScenario: Scenario(
                 action {
                     context.client["name"] = context.result
                     reactions.say("Nice to meet you ${context.result}")
+                }
+            }
+        }
+
+        state("x") {
+            activators {
+                intent("Hello")
+            }
+
+            genericAction {
+
+                (event to telegram) {
+
+                }
+                telegram {
+                    intent {
+                        reactions.api
+                        request.chatId
+                        activator
+                    }
+
+                    event {
+                        activator.event
+                    }
+
+                    caila {
+
+                    }
+
+                    alexa {
+
+                    }
+                }
+
+                alexa {
+
+                }
+            }
+
+            genericAction(caila) {
+                activator.entities
+            }
+
+            genericAction(telegram) {
+                request.chatId
+            }
+
+            genericAction(alexa) {
+                reactions.endSession()
+            }
+
+            genericAction(caila, telegram) {
+                (caila to telegram) {
+                    reactions.sendMessage("")
+                    activator.entities
+                }
+
+                val b: Int? = caila {
+                    val a: String? = telegram {
+                        reactions.sendMessage("")
+                        activator.entities
+                        ""
+                    }
+                    42
+                }
+
+                alexa {
+                    intent {
+                        request.intent?.intentRequest?.dialogState
+                        activator.intent
+                    }
+
+                    event {
+                        reactions.endSession()
+                        activator.event
+                    }
                 }
             }
         }

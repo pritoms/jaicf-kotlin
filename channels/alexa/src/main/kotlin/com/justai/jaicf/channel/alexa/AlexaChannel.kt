@@ -3,11 +3,14 @@ package com.justai.jaicf.channel.alexa
 import com.amazon.ask.model.RequestEnvelope
 import com.amazon.ask.util.JacksonSerializer
 import com.justai.jaicf.api.BotApi
+import com.justai.jaicf.channel.*
+import com.justai.jaicf.channel.alexa.activator.AlexaIntentActivatorContext
 import com.justai.jaicf.channel.http.HttpBotRequest
 import com.justai.jaicf.channel.http.HttpBotResponse
 import com.justai.jaicf.channel.http.asJsonHttpBotResponse
 import com.justai.jaicf.channel.jaicp.JaicpCompatibleBotChannel
 import com.justai.jaicf.channel.jaicp.JaicpCompatibleChannelFactory
+import com.justai.jaicf.context.ActivatorContext
 
 class AlexaChannel(
     override val botApi: BotApi
@@ -27,3 +30,6 @@ class AlexaChannel(
         override fun create(botApi: BotApi) = AlexaChannel(botApi)
     }
 }
+
+interface AlexaActivatorAndChannelType : ActivatorAndChannel<AlexaIntentActivatorContext, AlexaBotRequest, AlexaReactions>
+val alexa = object : AlexaActivatorAndChannelType {}

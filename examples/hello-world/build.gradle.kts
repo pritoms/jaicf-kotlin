@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":channels:aimybox"))
 
     implementation(project(":activators:dialogflow"))
+    implementation(project(":activators:caila"))
 
     testImplementation("org.junit.jupiter:junit-jupiter-api" version {jUnit})
     testRuntime("org.junit.jupiter:junit-jupiter-engine" version {jUnit})

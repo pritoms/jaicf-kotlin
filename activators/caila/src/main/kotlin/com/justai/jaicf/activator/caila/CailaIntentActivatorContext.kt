@@ -3,6 +3,7 @@ package com.justai.jaicf.activator.caila
 import com.justai.jaicf.activator.caila.dto.CailaAnalyzeResponseData
 import com.justai.jaicf.activator.caila.dto.CailaInferenceResultData
 import com.justai.jaicf.activator.intent.IntentActivatorContext
+import com.justai.jaicf.channel.ActivatorType
 import com.justai.jaicf.context.ActivatorContext
 
 data class CailaIntentActivatorContext(
@@ -22,3 +23,6 @@ data class CailaIntentActivatorContext(
 
 val ActivatorContext.caila
     get() = this as? CailaIntentActivatorContext
+
+object CailaActivatorType : ActivatorType<CailaIntentActivatorContext>
+val caila = CailaActivatorType
