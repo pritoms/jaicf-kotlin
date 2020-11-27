@@ -6,7 +6,6 @@ import com.justai.jaicf.channel.jaicp.channels.JaicpNativeBotChannel
 import com.justai.jaicf.channel.jaicp.channels.JaicpNativeChannelFactory
 import com.justai.jaicf.channel.jaicp.dto.ChannelConfig
 import com.justai.jaicf.channel.jaicp.dto.JaicpBotRequest
-import com.justai.jaicf.channel.jaicp.dto.JaicpBotResponse
 import com.justai.jaicf.channel.jaicp.http.ChatAdapterConnector
 import com.justai.jaicf.helpers.http.toUrl
 import com.justai.jaicf.helpers.logging.WithLogger
@@ -44,9 +43,9 @@ abstract class JaicpConnector(
     }
 
     private fun createChannel(factory: JaicpChannelFactory, cfg: ChannelConfig) = when (factory) {
-        is JaicpCompatibleChannelFactory -> register(factory.create(botApi), cfg)
-        is JaicpNativeChannelFactory -> register(factory.create(botApi), cfg)
-        is JaicpCompatibleAsyncChannelFactory -> register(factory.create(botApi, getChannelProxyUrl(cfg)), cfg)
+        is JaicpCompatibleChannelFactory -> registerInternal(factory.create(botApi), cfg)
+        is JaicpNativeChannelFactory -> registerInternal(factory.create(botApi), cfg)
+        is JaicpCompatibleAsyncChannelFactory -> registerInternal(factory.create(botApi, getChannelProxyUrl(cfg)), cfg)
         else -> logger.info("Channel type ${factory.channelType} is not added to list of channels in BotEngine")
     }
 
@@ -78,12 +77,22 @@ abstract class JaicpConnector(
         }
     }
 
+    private fun registerInternal(channel: JaicpBotChannel, channelConfig: ChannelConfig) {
+        if (channel is JaicpCompatibleChannelWithApiClient) {
+            channel.configureApiUrl("${getApiProxyUrl(channelConfig)}/proxyApiCall")
+        }
+        register(channel, channelConfig)
+    }
+
     abstract fun register(channel: JaicpBotChannel, channelConfig: ChannelConfig)
 
     abstract fun evict(channelConfig: ChannelConfig)
 
     protected fun getChannelProxyUrl(config: ChannelConfig) =
         "$proxyUrl/${config.channel}/${config.channelType.toLowerCase()}".toUrl()
+
+    protected fun getApiProxyUrl(config: ChannelConfig) =
+        "$apiProxyUrl/${config.channel}/${config.channelType.toLowerCase()}".toUrl()
 
     protected open fun processJaicpRequest(request: JaicpBotRequest, channel: JaicpBotChannel) = when (channel) {
         is JaicpNativeBotChannel -> channel.process(request)
@@ -102,3 +111,6 @@ abstract class JaicpConnector(
 
 val JaicpConnector.proxyUrl: String
     get() = "$url/proxy"
+
+val JaicpConnector.apiProxyUrl: String
+    get() = "$url/api-proxy"
