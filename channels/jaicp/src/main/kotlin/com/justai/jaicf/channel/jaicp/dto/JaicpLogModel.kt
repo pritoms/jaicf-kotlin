@@ -5,16 +5,19 @@ import com.justai.jaicf.activator.event.EventActivatorContext
 import com.justai.jaicf.activator.intent.IntentActivatorContext
 import com.justai.jaicf.activator.regex.RegexActivatorContext
 import com.justai.jaicf.channel.jaicp.JSON
+import com.justai.jaicf.channel.jaicp.logging.internal.SessionData
+import com.justai.jaicf.channel.jaicp.toJson
 import com.justai.jaicf.context.StrictActivatorContext
 import com.justai.jaicf.logging.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 
 
 @Serializable
-internal class JaicpLogModel private constructor(
+internal data class JaicpLogModel private constructor(
     val bot: String,
     val channel: String,
     val userId: String,
@@ -28,7 +31,9 @@ internal class JaicpLogModel private constructor(
     var query: String?,
     val botId: String,
     var answer: String?,
-    val channelType: String
+    val channelType: String,
+    val sessionId: String,
+    val isNewSession: Boolean
 ) {
     @Serializable
     data class NlpInfo(
@@ -73,8 +78,8 @@ internal class JaicpLogModel private constructor(
             ) = Request(
                 type = req.type.toString().toLowerCase(),
                 query = input,
-                requestData = req.data?.jsonObject ?: json { },
-                data = req.data?.jsonObject ?: json { }
+                requestData = req.data?.jsonObject ?: buildJsonObject {  },
+                data = req.data?.jsonObject ?: buildJsonObject {  }
             )
         }
     }
@@ -92,7 +97,7 @@ internal class JaicpLogModel private constructor(
         val username: String? = null
     ) {
         companion object Factory {
-            fun fromRequest(br: JaicpBotRequest) = JSON.parse(this.serializer(), br.userFrom.toString())
+            fun fromRequest(br: JaicpBotRequest) = JSON.decodeFromString(this.serializer(), br.userFrom.toString())
         }
     }
 
@@ -120,29 +125,17 @@ internal class JaicpLogModel private constructor(
                 .filterIsInstance<SayReaction>()
                 .joinToString(separator = "\n\n")
 
-            private fun buildReplies(reactions: List<Reaction>): List<JsonElement?> = reactions.mapNotNull { r ->
-                when (r) {
-                    is SayReaction -> JSON.toJson(TextReply.serializer(), TextReply(text = r.text, state = r.fromState))
-                    is ImageReaction -> JSON.toJson(
-                        ImageReply.serializer(),
-                        ImageReply(imageUrl = r.imageUrl, state = r.fromState)
-                    )
-                    is AudioReaction -> JSON.toJson(
-                        AudioReply.serializer(),
-                        AudioReply(audioUrl = r.audioUrl, state = r.fromState)
-                    )
-                    is ButtonsReaction -> JSON.toJson(
-                        ButtonsReply.serializer(),
-                        ButtonsReply(buttons = r.buttons.map { Button(it) }, state = r.fromState)
-                    )
-                    else -> null
-                }
-            }
+            private fun buildReplies(reactions: List<Reaction>) =
+                reactions.toReplies().map { it.serialized().toJson() }
         }
     }
 
     companion object Factory {
-        fun fromRequest(jaicpBotRequest: JaicpBotRequest, loggingContext: LoggingContext): JaicpLogModel {
+        fun fromRequest(
+            jaicpBotRequest: JaicpBotRequest,
+            loggingContext: LoggingContext,
+            session: SessionData
+        ): JaicpLogModel {
             val currentTimeUTC = System.currentTimeMillis()
             val request = Request.fromRequest(jaicpBotRequest, loggingContext.input)
             val user = User.fromRequest(jaicpBotRequest)
@@ -163,9 +156,21 @@ internal class JaicpLogModel private constructor(
                 channelType = jaicpBotRequest.channelType,
                 nlpInfo = nlp,
                 response = Response(response),
-                user = user
+                user = user,
+                sessionId = session.sessionId,
+                isNewSession = session.isNewSession
             )
         }
+    }
+}
+
+private fun List<Reaction>.toReplies() = mapNotNull { r ->
+    when (r) {
+        is SayReaction -> TextReply(r.text, state = r.fromState)
+        is ImageReaction -> ImageReply(r.imageUrl, state = r.fromState)
+        is AudioReaction -> AudioReply(audioUrl = r.audioUrl, state = r.fromState)
+        is ButtonsReaction -> ButtonsReply(buttons = r.buttons.map { Button(it) }, state = r.fromState)
+        else -> null
     }
 }
 

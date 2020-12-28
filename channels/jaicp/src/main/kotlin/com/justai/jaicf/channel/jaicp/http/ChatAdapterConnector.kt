@@ -9,6 +9,8 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 
 internal class ChatAdapterConnector(
@@ -18,18 +20,17 @@ internal class ChatAdapterConnector(
 ) : WithLogger {
 
     private val baseUrl = "$url/restapi/external-bot/$accessToken"
+    private val versionUrl = "$url/version"
 
     fun listChannels(): List<ChannelConfig> = runBlocking {
         try {
-            httpClient.get<List<ChannelConfig>>("$baseUrl/channels")
+            httpClient.get("$baseUrl/channels")
         } catch (e: ClientRequestException) {
             throw error("Invalid access token: $e")
         }
     }
 
-    fun processLog(logModel: JaicpLogModel) = runBlocking {
-        processLogAsync(logModel)
-    }
+    fun getVersion() = runBlocking { httpClient.get<JsonObject>(versionUrl)["buildBranch"]?.jsonPrimitive?.content }
 
     suspend fun processLogAsync(logModel: JaicpLogModel) {
         try {

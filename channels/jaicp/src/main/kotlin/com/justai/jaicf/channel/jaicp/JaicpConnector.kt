@@ -1,12 +1,11 @@
 package com.justai.jaicf.channel.jaicp
 
 import com.justai.jaicf.api.BotApi
-import com.justai.jaicf.channel.http.asHttpBotRequest
-import com.justai.jaicf.channel.jaicp.channels.JaicpNativeBotChannel
 import com.justai.jaicf.channel.jaicp.channels.JaicpNativeChannelFactory
 import com.justai.jaicf.channel.jaicp.dto.ChannelConfig
 import com.justai.jaicf.channel.jaicp.dto.JaicpBotRequest
 import com.justai.jaicf.channel.jaicp.http.ChatAdapterConnector
+import com.justai.jaicf.channel.jaicp.execution.ThreadPoolRequestExecutor
 import com.justai.jaicf.helpers.http.toUrl
 import com.justai.jaicf.helpers.logging.WithLogger
 import io.ktor.client.HttpClient
@@ -30,11 +29,14 @@ abstract class JaicpConnector(
     val channels: List<JaicpChannelFactory>,
     val accessToken: String,
     val url: String,
-    httpClient: HttpClient
+    httpClient: HttpClient,
+    executorThreadPoolSize: Int = DEFAULT_REQUEST_EXECUTOR_THREAD_POOL_SIZE
 ) : WithLogger {
 
+    protected val threadPoolRequestExecutor = ThreadPoolRequestExecutor(executorThreadPoolSize)
     private val chatAdapterConnector = ChatAdapterConnector(accessToken, url, httpClient)
     private var registeredChannels = fetchChannels()
+    protected val useLegacyPollingApi = chatAdapterConnector.getVersion() in listOf("release-1.10.1", "release-1.10.2")
 
     protected fun loadConfig() {
         registeredChannels.forEach { (factory, cfg) ->
@@ -103,6 +105,11 @@ abstract class JaicpConnector(
         }
         else -> null
     }
+    private val proxyUrl: String
+        get() = if (useLegacyPollingApi) "$url/proxy" else "$url/proxy/$accessToken"
+
+    protected open fun processJaicpRequest(request: JaicpBotRequest, channel: JaicpBotChannel): JaicpBotResponse? =
+        threadPoolRequestExecutor.executeSync(request, channel)
 
     companion object {
         const val PING_REQUEST_TYPE = "ping"
@@ -114,3 +121,4 @@ val JaicpConnector.proxyUrl: String
 
 val JaicpConnector.apiProxyUrl: String
     get() = "$url/api-proxy"
+internal const val DEFAULT_REQUEST_EXECUTOR_THREAD_POOL_SIZE = 5

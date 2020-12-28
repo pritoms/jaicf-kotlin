@@ -3,6 +3,7 @@ package com.justai.jaicf.channel.telegram
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.*
 import com.github.kotlintelegrambot.entities.inputmedia.MediaGroup
+import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import com.github.kotlintelegrambot.network.Response
 import com.justai.jaicf.logging.AudioReaction
 import com.justai.jaicf.logging.ButtonsReaction
@@ -37,12 +38,12 @@ class TelegramReactions(
     override fun buttons(vararg buttons: String): ButtonsReaction {
         messages.lastOrNull()?.let { message ->
             val keyboard = message.replyMarkup?.inlineKeyboard?.toMutableList() ?: mutableListOf()
-            keyboard.addAll(buttons.map { listOf(InlineKeyboardButton(it, callbackData = it)) })
+            keyboard.addAll(buttons.map { listOf(InlineKeyboardButton.CallbackData(it, callbackData = it)) })
 
             api.editMessageReplyMarkup(
-                    chatId,
-                    message.messageId,
-                    replyMarkup = InlineKeyboardMarkup(keyboard)
+                chatId,
+                message.messageId,
+                replyMarkup = InlineKeyboardMarkup.create(keyboard)
             ).also { addResponse(it) }
         }
 
@@ -52,8 +53,8 @@ class TelegramReactions(
     fun say(text: String, inlineButtons: List<String>) = api.sendMessage(
         chatId,
         text,
-        replyMarkup = InlineKeyboardMarkup(
-            listOf(inlineButtons.map { InlineKeyboardButton(it, callbackData = it) })
+        replyMarkup = InlineKeyboardMarkup.create(
+            listOf(inlineButtons.map { InlineKeyboardButton.CallbackData(it, callbackData = it) })
         ).also {
             SayReaction.create(text)
             ButtonsReaction.create(inlineButtons)

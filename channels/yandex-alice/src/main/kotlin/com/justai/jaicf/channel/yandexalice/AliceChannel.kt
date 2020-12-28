@@ -31,7 +31,7 @@ class AliceChannel(
     }
 
     override fun process(request: HttpBotRequest): HttpBotResponse? {
-        val botRequest = JSON.parse(AliceBotRequest.serializer(), request.receiveText())
+        val botRequest = JSON.decodeFromString(AliceBotRequest.serializer(), request.receiveText())
         val botResponse = AliceBotResponse(botRequest)
 
         if (botRequest.request?.originalUtterance == "ping") {
@@ -48,7 +48,7 @@ class AliceChannel(
             )
         }
 
-        return JSON.stringify(AliceBotResponse.serializer(), botResponse).asJsonHttpBotResponse()
+        return JSON.encodeToString(AliceBotResponse.serializer(), botResponse).asJsonHttpBotResponse()
     }
 
     class Factory(private val useDataStorage: Boolean = false) : JaicpCompatibleChannelFactory {

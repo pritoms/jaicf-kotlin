@@ -2,11 +2,14 @@ package com.justai.jaicf.channel.jaicp.dialer
 
 import com.justai.jaicf.channel.jaicp.JaicpBaseTest
 import com.justai.jaicf.channel.jaicp.JaicpTestChannel
+import com.justai.jaicf.channel.jaicp.ScenarioFactory
+import com.justai.jaicf.channel.jaicp.ScenarioFactory.echoWithAction
 import com.justai.jaicf.channel.jaicp.channels.TelephonyChannel
 import com.justai.jaicf.channel.jaicp.reactions.telephony
 import com.justai.jaicf.context.ActionContext
 import com.justai.jaicf.model.scenario.Scenario
-import kotlinx.serialization.json.json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
 import java.time.DayOfWeek
 import java.time.Instant
@@ -27,6 +30,7 @@ internal class JaicpDialerAPITests : JaicpBaseTest() {
                 maxAttempts = 5,
                 retryIntervalInMinutes = 5
             )
+            reactions.say("You said: ${request.input}")
         }
 
         val channel = JaicpTestChannel(scenario, TelephonyChannel)
@@ -38,6 +42,7 @@ internal class JaicpDialerAPITests : JaicpBaseTest() {
     fun `002 dialer should report property from call`() {
         val scenario = echoWithAction {
             reactions.telephony?.report("propname", "propvalue")
+            reactions.say("You said: ${request.input}")
         }
 
         val channel = JaicpTestChannel(scenario, TelephonyChannel)
@@ -50,10 +55,11 @@ internal class JaicpDialerAPITests : JaicpBaseTest() {
         val scenario = echoWithAction {
             reactions.telephony?.setResult(
                 callResult = "call ended",
-                callResultPayload = json {
-                    "result" to "Ok"
+                callResultPayload = buildJsonObject {
+                    put("result", "Ok")
                 }.toString()
             )
+            reactions.say("You said: ${request.input}")
         }
 
         val channel = JaicpTestChannel(scenario, TelephonyChannel)
@@ -69,25 +75,15 @@ internal class JaicpDialerAPITests : JaicpBaseTest() {
             reactions.telephony?.report("smoking", "i love it")
             reactions.telephony?.setResult(
                 callResult = "call ended",
-                callResultPayload = json {
-                    "result" to "Ok"
+                callResultPayload = buildJsonObject {
+                    put("result", "Ok")
                 }.toString()
             )
+            reactions.say("You said: ${request.input}")
         }
 
         val channel = JaicpTestChannel(scenario, TelephonyChannel)
         val response = channel.process(request)
         assertEquals(expected, response.jaicp)
-    }
-}
-
-private fun echoWithAction(block: ActionContext.() -> Unit): Scenario {
-    return object : Scenario() {
-        init {
-            fallback {
-                block()
-                reactions.say("You said: ${request.input}")
-            }
-        }
     }
 }
