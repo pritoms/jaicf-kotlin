@@ -4,6 +4,7 @@ import com.justai.jaicf.api.BotApi
 import com.justai.jaicf.channel.jaicp.channels.JaicpNativeChannelFactory
 import com.justai.jaicf.channel.jaicp.dto.ChannelConfig
 import com.justai.jaicf.channel.jaicp.dto.JaicpBotRequest
+import com.justai.jaicf.channel.jaicp.dto.JaicpBotResponse
 import com.justai.jaicf.channel.jaicp.http.ChatAdapterConnector
 import com.justai.jaicf.channel.jaicp.execution.ThreadPoolRequestExecutor
 import com.justai.jaicf.helpers.http.toUrl
@@ -93,18 +94,9 @@ abstract class JaicpConnector(
     protected fun getChannelProxyUrl(config: ChannelConfig) =
         "$proxyUrl/${config.channel}/${config.channelType.toLowerCase()}".toUrl()
 
-    protected fun getApiProxyUrl(config: ChannelConfig) =
+    private fun getApiProxyUrl(config: ChannelConfig) =
         "$apiProxyUrl/${config.channel}/${config.channelType.toLowerCase()}".toUrl()
 
-    protected open fun processJaicpRequest(request: JaicpBotRequest, channel: JaicpBotChannel) = when (channel) {
-        is JaicpNativeBotChannel -> channel.process(request)
-        is JaicpCompatibleBotChannel -> channel.processCompatible(request)
-        is JaicpCompatibleAsyncBotChannel -> {
-            channel.process(request.raw.asHttpBotRequest(request.stringify()))
-            null
-        }
-        else -> null
-    }
     private val proxyUrl: String
         get() = if (useLegacyPollingApi) "$url/proxy" else "$url/proxy/$accessToken"
 
@@ -116,9 +108,8 @@ abstract class JaicpConnector(
     }
 }
 
-val JaicpConnector.proxyUrl: String
-    get() = "$url/proxy"
 
 val JaicpConnector.apiProxyUrl: String
-    get() = "$url/api-proxy"
+    get() = "$url/api-proxy/$accessToken"
+
 internal const val DEFAULT_REQUEST_EXECUTOR_THREAD_POOL_SIZE = 5
